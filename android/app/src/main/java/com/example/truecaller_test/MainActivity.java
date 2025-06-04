@@ -53,7 +53,7 @@ public class MainActivity extends FlutterFragmentActivity {
                 }
             });
 
-        // Event channel
+        // Event channel for sending success/error
         new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), EVENT_CHANNEL)
             .setStreamHandler(new EventChannel.StreamHandler() {
                 @Override
@@ -73,6 +73,7 @@ public class MainActivity extends FlutterFragmentActivity {
             @SuppressWarnings("unchecked")
             Map<String, Object> args = (Map<String, Object>) arguments;
 
+            // Initialize the SDK with options
             TcSdkOptions options = new TcSdkOptions.Builder(this, new TcOAuthCallback() {
                 @Override
                 public void onSuccess(TcOAuthData data) {
@@ -81,7 +82,7 @@ public class MainActivity extends FlutterFragmentActivity {
                             "authorizationCode", data.getAuthorizationCode(),
                             "codeVerifier", codeVerifier
                         );
-                        eventSink.success(resultMap);
+                        runOnUiThread(() -> eventSink.success(resultMap));
                     }
                 }
 
@@ -92,13 +93,13 @@ public class MainActivity extends FlutterFragmentActivity {
                             "errorCode", error.getErrorCode(),
                             "errorMessage", error.getErrorMessage()
                         );
-                        eventSink.success(errorMap);
+                        runOnUiThread(() -> eventSink.error("AUTH_ERROR", error.getErrorMessage(), errorMap));
                     }
                 }
 
                 @Override
                 public void onVerificationRequired(TcOAuthError error) {
-                    // Optional
+                    // Optional: Handle further verification steps if needed
                 }
             })
             .buttonColor(Color.parseColor((String) args.get("buttonColor")))
@@ -119,11 +120,13 @@ public class MainActivity extends FlutterFragmentActivity {
 
     private void invokeSdk(MethodChannel.Result result) {
         try {
+            // Generate OAuth state and set scopes
             SecureRandom random = new SecureRandom();
             BigInteger state = new BigInteger(130, random);
             TcSdk.getInstance().setOAuthState(state.toString(32));
             TcSdk.getInstance().setOAuthScopes(new String[]{"profile", "phone", "email"});
 
+            // Generate code verifier and challenge
             codeVerifier = CodeVerifierUtil.Companion.generateRandomCodeVerifier();
             String codeChallenge = CodeVerifierUtil.Companion.getCodeChallenge(codeVerifier);
 
@@ -131,6 +134,7 @@ public class MainActivity extends FlutterFragmentActivity {
                 TcSdk.getInstance().setCodeChallenge(codeChallenge);
             }
 
+            // Get the authorization code
             TcSdk.getInstance().getAuthorizationCode((FragmentActivity) this);
             result.success(null);
         } catch (Exception e) {

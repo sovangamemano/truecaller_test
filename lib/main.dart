@@ -22,7 +22,8 @@ class _TruecallerScreenState extends State<TruecallerScreen> {
     TruecallerService.startListening(
       onSuccess: (authCode, codeVerifier) {
         setState(() {
-          resultText = "Success\nAuth Code: $authCode\nCode Verifier: $codeVerifier";
+          resultText =
+              "Success\nAuth Code: $authCode\nCode Verifier: $codeVerifier";
         });
       },
       onError: (errorCode, message) {
@@ -35,9 +36,9 @@ class _TruecallerScreenState extends State<TruecallerScreen> {
 
   Future<void> _startTruecallerFlow() async {
     try {
+      await TruecallerService.initialize();
       bool usable = await TruecallerService.isUsable();
       if (usable) {
-        await TruecallerService.initialize();
         await TruecallerService.invoke();
       } else {
         setState(() => resultText = 'Truecaller not available on this device');
