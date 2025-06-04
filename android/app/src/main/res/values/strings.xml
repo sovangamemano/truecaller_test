@@ -1,0 +1,7 @@
+<resources>
+    <!-- Existing strings -->
+    <string name="app_name">truecallerflutter</string>
+
+    <!-- Add your Truecaller clientID here -->
+    <string name="clientID">0buanr76pwthcqe5ro51ichxvk6_k6vcf8dt3I-8r-0</string>
+</resources>
