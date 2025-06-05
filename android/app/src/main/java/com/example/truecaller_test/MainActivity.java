@@ -21,11 +21,13 @@ import io.flutter.embedding.android.FlutterFragmentActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
+import android.util.Log; // Import for logging
 
 public class MainActivity extends FlutterFragmentActivity {
 
     private static final String CHANNEL = "truecaller_sdk";
     private static final String EVENT_CHANNEL = "truecaller_sdk_events";
+    private static final String TAG = "TruecallerSDK"; // Log tag
     private static EventChannel.EventSink eventSink;
 
     private String codeVerifier;
@@ -34,9 +36,12 @@ public class MainActivity extends FlutterFragmentActivity {
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
 
-        // Method channel
+        Log.d(TAG, "Configuring Flutter engine and setting up MethodChannel");
+
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
             .setMethodCallHandler((call, result) -> {
+                Log.d(TAG, "Received method call: " + call.method);
+
                 switch (call.method) {
                     case "initialize":
                         initializeSdk(call.arguments, result);
@@ -48,21 +53,23 @@ public class MainActivity extends FlutterFragmentActivity {
                         isSdkUsable(result);
                         break;
                     default:
+                        Log.w(TAG, "Unknown method called: " + call.method);
                         result.notImplemented();
                         break;
                 }
             });
 
-        // Event channel for sending success/error
         new EventChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), EVENT_CHANNEL)
             .setStreamHandler(new EventChannel.StreamHandler() {
                 @Override
                 public void onListen(Object arguments, EventChannel.EventSink sink) {
+                    Log.d(TAG, "Event channel listening started");
                     eventSink = sink;
                 }
 
                 @Override
                 public void onCancel(Object arguments) {
+                    Log.d(TAG, "Event channel cancelled");
                     eventSink = null;
                 }
             });
@@ -70,13 +77,16 @@ public class MainActivity extends FlutterFragmentActivity {
 
     private void initializeSdk(Object arguments, MethodChannel.Result result) {
         try {
+            Log.d(TAG, "Initializing SDK with arguments: " + arguments.toString());
+
             @SuppressWarnings("unchecked")
             Map<String, Object> args = (Map<String, Object>) arguments;
 
-            // Initialize the SDK with options
             TcSdkOptions options = new TcSdkOptions.Builder(this, new TcOAuthCallback() {
                 @Override
                 public void onSuccess(TcOAuthData data) {
+                    Log.d(TAG, "Truecaller auth success: " + data.getAuthorizationCode());
+
                     if (eventSink != null) {
                         Map<String, Object> resultMap = Map.of(
                             "authorizationCode", data.getAuthorizationCode(),
@@ -88,6 +98,8 @@ public class MainActivity extends FlutterFragmentActivity {
 
                 @Override
                 public void onFailure(TcOAuthError error) {
+                    Log.e(TAG, "Truecaller auth failure: " + error.getErrorMessage());
+
                     if (eventSink != null) {
                         Map<String, Object> errorMap = Map.of(
                             "errorCode", error.getErrorCode(),
@@ -99,7 +111,7 @@ public class MainActivity extends FlutterFragmentActivity {
 
                 @Override
                 public void onVerificationRequired(TcOAuthError error) {
-                    // Optional: Handle further verification steps if needed
+                    Log.w(TAG, "Verification required: " + error.getErrorMessage());
                 }
             })
             .buttonColor(Color.parseColor((String) args.get("buttonColor")))
@@ -111,33 +123,44 @@ public class MainActivity extends FlutterFragmentActivity {
             .build();
 
             TcSdk.init(options);
+            Log.d(TAG, "Truecaller SDK initialized successfully");
             result.success(null);
 
         } catch (Exception e) {
+            Log.e(TAG, "SDK initialization error: " + e.getMessage(), e);
             result.error("INIT_ERROR", e.getMessage(), null);
         }
     }
 
     private void invokeSdk(MethodChannel.Result result) {
         try {
-            // Generate OAuth state and set scopes
+            Log.d(TAG, "Invoking SDK...");
+
             SecureRandom random = new SecureRandom();
             BigInteger state = new BigInteger(130, random);
-            TcSdk.getInstance().setOAuthState(state.toString(32));
-            TcSdk.getInstance().setOAuthScopes(new String[]{"profile", "phone", "email"});
+            String stateStr = state.toString(32);
+            TcSdk.getInstance().setOAuthState(stateStr);
+            Log.d(TAG, "OAuth state set: " + stateStr);
 
-            // Generate code verifier and challenge
+            TcSdk.getInstance().setOAuthScopes(new String[]{"profile", "phone", "email"});
+            Log.d(TAG, "OAuth scopes set");
+
             codeVerifier = CodeVerifierUtil.Companion.generateRandomCodeVerifier();
             String codeChallenge = CodeVerifierUtil.Companion.getCodeChallenge(codeVerifier);
+
+            Log.d(TAG, "Code verifier generated: " + codeVerifier);
+            Log.d(TAG, "Code challenge generated: " + codeChallenge);
 
             if (codeChallenge != null) {
                 TcSdk.getInstance().setCodeChallenge(codeChallenge);
             }
 
-            // Get the authorization code
             TcSdk.getInstance().getAuthorizationCode((FragmentActivity) this);
+            Log.d(TAG, "Authorization request initiated");
             result.success(null);
+
         } catch (Exception e) {
+            Log.e(TAG, "Error invoking SDK: " + e.getMessage(), e);
             result.error("INVOKE_ERROR", e.getMessage(), null);
         }
     }
@@ -145,8 +168,10 @@ public class MainActivity extends FlutterFragmentActivity {
     private void isSdkUsable(MethodChannel.Result result) {
         try {
             boolean usable = TcSdk.getInstance().isOAuthFlowUsable();
+            Log.d(TAG, "isOAuthFlowUsable: " + usable);
             result.success(usable);
         } catch (Exception e) {
+            Log.e(TAG, "Error checking SDK usability: " + e.getMessage(), e);
             result.error("CHECK_ERROR", e.getMessage(), null);
         }
     }

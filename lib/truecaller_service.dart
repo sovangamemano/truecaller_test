@@ -2,17 +2,20 @@ import 'package:flutter/services.dart';
 
 class TruecallerService {
   static const MethodChannel _channel = MethodChannel('truecaller_sdk');
-  static const EventChannel _eventChannel = EventChannel('truecaller_sdk_events');
+  static const EventChannel _eventChannel = EventChannel(
+    'truecaller_sdk_events',
+  );
 
   static Future<void> initialize() async {
     await _channel.invokeMethod('initialize', {
       "buttonColor": "#00AEEF",
-      "buttonTextColor": "#FFFFFF"
+      "buttonTextColor": "#FFFFFF",
     });
   }
 
   static Future<void> invoke() async {
-    await _channel.invokeMethod('invoke');
+    final result = await _channel.invokeMethod('invoke');
+    print("Invoke result: $result");
   }
 
   static Future<bool> isUsable() async {
