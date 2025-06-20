@@ -42,4 +42,12 @@ class MainActivity: FlutterActivity() {
             )
         }
     }
+
+    // Now restart or exit app to avoid crash
+    Handler(Looper.getMainLooper()).postDelayed({
+        val intent = pm.getLaunchIntentForPackage(packageName)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        Runtime.getRuntime().exit(0)
+    }, 300)
 }
