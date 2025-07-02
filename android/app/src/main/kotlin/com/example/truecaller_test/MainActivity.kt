@@ -14,13 +14,12 @@ import io.flutter.plugin.common.MethodChannel
 
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "overlay_channel"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-            call, result ->
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "overlay_channel")
+        .setMethodCallHandler { call, result ->
             when (call.method) {
                 "showOverlay" -> {
                     if (!Settings.canDrawOverlays(this)) {
@@ -29,36 +28,45 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
                         result.success("permission_required")
                     } else {
-                        val serviceIntent = Intent(this, OverlayService::class.java)
+                        val intent = Intent(this, OverlayService::class.java)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            startForegroundService(serviceIntent)
+                            startForegroundService(intent)
                         } else {
-                            startService(serviceIntent)
+                            startService(intent)
                         }
                         result.success("started")
                     }
                 }
-                "scheduleOverlay" -> {
-                    val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        intent.data = Uri.parse("package:$packageName")
-                        startActivity(intent)
-                        result.success("permission_required")
-                        return@setMethodCallHandler
-                    }
-
-                    val intent = Intent(this, AlarmReceiver::class.java)
-                    val pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-
-                    val triggerAt = System.currentTimeMillis() + 10000
-                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
-
-                    result.success("scheduled")
-                }
-                else -> result.notImplemented()
             }
         }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleOverlayAction(intent)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleOverlayAction(intent)
+    }
+
+    private fun handleOverlayAction(intent: Intent?) {
+        val action = intent?.getStringExtra("action")
+        val orderId = intent?.getStringExtra("orderId")
+
+        if (action != null && orderId != null) {
+            val channel = MethodChannel(flutterEngine!!.dartExecutor.binaryMessenger, "overlay_action")
+
+            channel.invokeMethod("handleAction", mapOf("action" to action, "orderId" to orderId))
+        }
+    }
+
 }
+
+// {
+//   "to": "<DEVICE_TOKEN>",
+//   "data": {
+//     "title": "Zomato Order",
+//     "order_id": "8976"
+//   }
+// }

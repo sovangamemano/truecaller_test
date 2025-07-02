@@ -1,36 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/overlay_layout.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:background="#E91E63"
+    android:background="@drawable/overlay_bg"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="16dp">
 
+    <ImageView
+        android:src="@drawable/ic_order"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="8dp" />
+
     <TextView
-        android:id="@+id/overlayText"
-        android:text="🎉 Your promo is active!"
+        android:id="@+id/orderTitle"
+        android:text="New Order"
         android:textColor="#FFFFFF"
         android:textSize="18sp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
 
     <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:gravity="end"
+        android:layout_marginTop="10dp">
 
         <Button
-            android:id="@+id/openAppButton"
-            android:text="Open App"
+            android:id="@+id/acceptButton"
+            android:text="Accept"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_button_green"
+            android:textColor="#FFFFFF" />
 
         <Button
-            android:id="@+id/closeButton"
-            android:text="Dismiss"
+            android:id="@+id/rejectButton"
+            android:text="Reject"
             android:layout_width="0dp"
             android:layout_weight="1"
-            android:layout_height="wrap_content" />
+            android:layout_marginStart="8dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_button_red"
+            android:textColor="#FFFFFF" />
     </LinearLayout>
 </LinearLayout>

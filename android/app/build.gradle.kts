@@ -51,4 +51,5 @@ flutter {
 
 dependencies {
     implementation("com.truecaller.android.sdk:truecaller-sdk:3.0.0")
+    implementation("com.google.firebase:firebase-messaging:23.3.1")
 }

@@ -2,49 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 const platform = MethodChannel('overlay_channel');
 
-class MyApp extends StatelessWidget {
-  Future<void> _showOverlay() async {
-    try {
-      final result = await platform.invokeMethod('showOverlay');
-      debugPrint('Overlay result: $result');
-    } on PlatformException catch (e) {
-      debugPrint("Failed to show overlay: ${e.message}");
-    }
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsFlutterBinding.ensureInitialized();
+    setupOverlayListener();
   }
 
-  Future<void> _scheduleOverlay() async {
+  Future<void> showOverlay() async {
     try {
-      final result = await platform.invokeMethod('scheduleOverlay');
-      debugPrint('Overlay scheduled: $result');
+      final res = await platform.invokeMethod('showOverlay');
+      debugPrint('Overlay result: $res');
     } on PlatformException catch (e) {
-      debugPrint("Failed to schedule overlay: ${e.message}");
+      debugPrint('Error: ${e.message}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Overlay Demo',
+      title: 'Overlay Test',
       home: Scaffold(
-        appBar: AppBar(title: Text("Overlay Banner Example")),
+        appBar: AppBar(title: const Text('Overlay Test')),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(onPressed: _showOverlay, child: Text("Show Now")),
-              ElevatedButton(
-                onPressed: _scheduleOverlay,
-                child: Text("Show After 10s"),
-              ),
-            ],
+          child: ElevatedButton(
+            onPressed: showOverlay,
+            child: const Text('Show Test Banner'),
           ),
         ),
       ),
     );
   }
+}
+
+const overlayActionChannel = MethodChannel("overlay_action");
+
+void setupOverlayListener() {
+  overlayActionChannel.setMethodCallHandler((call) async {
+    if (call.method == "handleAction") {
+      final data = Map<String, dynamic>.from(call.arguments);
+      final action = data["action"];
+      final orderId = data["orderId"];
+
+      // Call your Dio API using existing setup
+      // await YourApiService.handleOrderAction(action, orderId);
+      print("Action: $action, Order ID: $orderId");
+      // Optionally show Toast/snackbar
+    }
+  });
 }
