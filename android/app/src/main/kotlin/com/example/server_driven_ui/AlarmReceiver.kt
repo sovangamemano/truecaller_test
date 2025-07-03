@@ -1,4 +1,4 @@
-package com.example.truecaller_test
+package com.example.server_driven_ui
 
 import android.content.BroadcastReceiver
 import android.content.Context

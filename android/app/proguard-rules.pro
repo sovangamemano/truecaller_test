@@ -9,3 +9,5 @@
 
 # Optional: Keep okhttp3 (used under the hood)
 -dontwarn okhttp3.**
+-keep class com.example.server_driven_ui.** { *; }
+-keep class io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService { *; }
