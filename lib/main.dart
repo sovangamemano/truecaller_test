@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
       print("📱 FCM Token: $token");
     });
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _triggerOverlay('12345', 'New Order');
+      _triggerOverlay(message.data["orderId"], message.data["title"]);
       print('🔥 Foreground Message: ${message.data}');
       // Show overlay or call native method here
     });

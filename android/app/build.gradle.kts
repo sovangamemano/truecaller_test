@@ -55,4 +55,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging:23.3.1")
     implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.core:core:1.12.0")
 }
