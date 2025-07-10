@@ -1,17 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/white">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:padding="20dp"
+    android:background="#FFFFFF" android:gravity="center">
 
     <TextView
         android:id="@+id/orderTitle"
-        android:textSize="20sp"
-        android:text="Incoming Order"
-        android:layout_marginBottom="24dp"
+        android:text="Order"
+        android:textSize="24sp"
+        android:layout_marginBottom="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
@@ -26,5 +22,5 @@
         android:text="Reject"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="10dp"/>
 </LinearLayout>

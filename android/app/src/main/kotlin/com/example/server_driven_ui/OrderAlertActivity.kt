@@ -1,55 +1,66 @@
 package com.example.server_driven_ui
 
+import android.app.KeyguardManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.FlutterEngineCache
-import io.flutter.embedding.engine.dart.DartExecutor
+import android.util.Log
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 
 class OrderAlertActivity : AppCompatActivity() {
-
-    private lateinit var channel: MethodChannel
-    private val CHANNEL = "overlay_action"
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
-        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+        // Unlock screen if locked
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            val km = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            km.requestDismissKeyguard(this, null)
+        } else {
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
+        }
 
         setContentView(R.layout.activity_order_alert)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent()
+            val packageName = packageName
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                intent.action = android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                intent.data = android.net.Uri.parse("package:$packageName")
+                startActivity(intent)
+            }
+        }
+
 
         val orderId = intent.getStringExtra("orderId") ?: "0000"
         val title = intent.getStringExtra("title") ?: "New Order"
 
         findViewById<TextView>(R.id.orderTitle).text = "Order #$orderId: $title"
 
-        // Setup FlutterEngine if not already
-        var engine = FlutterEngineCache.getInstance().get("main_engine")
-        if (engine == null) {
-            engine = FlutterEngine(this)
-            engine.dartExecutor.executeDartEntrypoint(
-                DartExecutor.DartEntrypoint.createDefault()
-            )
-            FlutterEngineCache.getInstance().put("main_engine", engine)
-        }
-
-        channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
-
         findViewById<Button>(R.id.acceptButton).setOnClickListener {
-            Log.d("OrderAlert", "Order Accepted")
-            channel.invokeMethod("handleAction", mapOf("action" to "accept", "orderId" to orderId))
+            Log.d("OrderAlert", "Accepted")
+            // TODO: Send result to Flutter via broadcast or intent
             finish()
         }
 
         findViewById<Button>(R.id.rejectButton).setOnClickListener {
-            Log.d("OrderAlert", "Order Rejected")
-            channel.invokeMethod("handleAction", mapOf("action" to "reject", "orderId" to orderId))
+            Log.d("OrderAlert", "Rejected")
+            // TODO: Send result to Flutter via broadcast or intent
             finish()
         }
     }
