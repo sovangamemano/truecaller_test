@@ -49,6 +49,16 @@ class _MyAppState extends State<MyApp> {
       print('📦 Notification caused app to open: ${message.data}');
     });
 
+    MethodChannel overlayActionChannel = const MethodChannel('overlay_action');
+    overlayActionChannel.setMethodCallHandler((call) async {
+      if (call.method == "handleAction") {
+        final action = call.arguments["action"];
+        final orderId = call.arguments["orderId"];
+        print("🔔 Action: $action | Order: $orderId");
+        // Handle in Flutter UI
+      }
+    });
+
     // Listen for Accept / Reject coming from native
     overlayActionChannel.setMethodCallHandler((call) async {
       if (call.method == "handleAction") {

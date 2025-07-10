@@ -1,47 +1,26 @@
 package com.example.server_driven_ui
 
-import android.app.KeyguardManager
-import android.content.Context
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import android.os.PowerManager
 import android.util.Log
+import androidx.appcompat.app.AppCompatActivity
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
+import io.flutter.embedding.engine.dart.DartExecutor
 
 class OrderAlertActivity : AppCompatActivity() {
+
+    private lateinit var channel: MethodChannel
+    private val CHANNEL = "overlay_action"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.d("OrderAlert", "Activity Launched")
-
-        // Turn screen on and dismiss keyguard
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-            )
-        }
-
-        // Dismiss keyguard (lock screen)
-        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        val keyguardLock = keyguardManager.newKeyguardLock("OrderAlert")
-        keyguardLock.disableKeyguard()
-
-        // Wake the screen
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        val wakeLock = powerManager.newWakeLock(
-            PowerManager.FULL_WAKE_LOCK or
-            PowerManager.ACQUIRE_CAUSES_WAKEUP or
-            PowerManager.ON_AFTER_RELEASE,
-            "OrderAlert::WakeLock"
-        )
-        wakeLock.acquire(3000)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
 
         setContentView(R.layout.activity_order_alert)
 
@@ -50,13 +29,27 @@ class OrderAlertActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.orderTitle).text = "Order #$orderId: $title"
 
+        // Setup FlutterEngine if not already
+        var engine = FlutterEngineCache.getInstance().get("main_engine")
+        if (engine == null) {
+            engine = FlutterEngine(this)
+            engine.dartExecutor.executeDartEntrypoint(
+                DartExecutor.DartEntrypoint.createDefault()
+            )
+            FlutterEngineCache.getInstance().put("main_engine", engine)
+        }
+
+        channel = MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+
         findViewById<Button>(R.id.acceptButton).setOnClickListener {
             Log.d("OrderAlert", "Order Accepted")
+            channel.invokeMethod("handleAction", mapOf("action" to "accept", "orderId" to orderId))
             finish()
         }
 
         findViewById<Button>(R.id.rejectButton).setOnClickListener {
             Log.d("OrderAlert", "Order Rejected")
+            channel.invokeMethod("handleAction", mapOf("action" to "reject", "orderId" to orderId))
             finish()
         }
     }
