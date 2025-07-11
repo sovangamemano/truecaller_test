@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  ValueNotifier<bool> isScrolling = ValueNotifier(false);
+  Timer? _scrollStopTimer;
   static const MethodChannel overlayChannel = MethodChannel('overlay_channel');
   static const MethodChannel overlayActionChannel = MethodChannel(
     'overlay_action',
@@ -116,6 +120,57 @@ class _MyAppState extends State<MyApp> {
       title: 'Overlay Test',
       home: Scaffold(
         appBar: AppBar(title: Text('Overlay Trigger')),
+        floatingActionButton: Align(
+          alignment: Alignment.bottomCenter,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: isScrolling,
+            builder: (context, isScrollingValue, child) {
+              return AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) => SizeTransition(
+                          sizeFactor: animation,
+                          axis: Axis.horizontal,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
+                        child: isScrollingValue
+                            ? const SizedBox(key: ValueKey('empty'), width: 0)
+                            : Center(
+                                child: Padding(
+                                  key: const ValueKey('scrolling'),
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: Text(
+                                    "Scrolling...",
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                      ),
+                      const Icon(Icons.arrow_upward, color: Colors.white),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -127,6 +182,36 @@ class _MyAppState extends State<MyApp> {
               ),
               const SizedBox(height: 20),
               Text(_log, style: TextStyle(fontSize: 16, color: Colors.black87)),
+              Expanded(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification notification) {
+                    if (notification is ScrollStartNotification) {
+                      print("Scrolling...");
+                      isScrolling.value = true;
+
+                      // Cancel any pending timer
+                      _scrollStopTimer?.cancel();
+                    } else if (notification is ScrollEndNotification) {
+                      print("Stopped scrolling... waiting to reset");
+
+                      // Cancel previous timer if any
+                      _scrollStopTimer?.cancel();
+
+                      // Start new timer
+                      _scrollStopTimer = Timer(const Duration(seconds: 1), () {
+                        print("Actually stopped.");
+                        isScrolling.value = false;
+                      });
+                    }
+                    return true;
+                  },
+                  child: ListView.builder(
+                    itemCount: 1000,
+                    itemBuilder: (_, index) =>
+                        SizedBox(height: 20, child: Text("List $index")),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
