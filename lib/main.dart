@@ -4,16 +4,49 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:readsms/readsms.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'dashboard.dart';
 
+void callbackDispatcher() {
+  Workmanager().executeTask((taskName, inputData) async {
+    final plugin = Readsms();
+
+    plugin.read();
+    plugin.smsStream.listen((event) {
+      print("🔴 SMS RECEIVED in BACKGROUND");
+      print("📤 Sender: ${event.sender}");
+      print("📩 Message: ${event.body}");
+      print("🕒 Time: ${event.timeReceived}");
+    });
+
+    // Delay to keep the stream alive
+    await Future.delayed(Duration(seconds: 30));
+    plugin.dispose();
+
+    return Future.value(true);
+  });
+}
+
+const platform = MethodChannel("sms.channel");
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Workmanager().initialize(callbackDispatcher);
+  setDefaultSmsApp();
   await Firebase.initializeApp();
 
   // Optional: background handler if needed
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   runApp(MyApp());
+}
+
+Future<void> setDefaultSmsApp() async {
+  try {
+    await platform.invokeMethod('makeDefaultSmsApp');
+  } on PlatformException catch (e) {
+    print("Error setting default SMS app: ${e.message}");
+  }
 }
 
 // Must be a top-level function
@@ -120,9 +153,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Overlay Test',
-      home: 
-      Dashboard(),
-      
+      home: Dashboard(),
+
       // Scaffold(
       //   appBar: AppBar(title: Text('Overlay Trigger')),
       //   floatingActionButton: Align(

@@ -11,6 +11,8 @@ import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import android.provider.Telephony
+import android.widget.Toast
 
 
 class MainActivity : FlutterActivity() {
@@ -46,6 +48,14 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "sms.channel").setMethodCallHandler { call, result ->
+            if (call.method == "makeDefaultSmsApp") {
+                val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+                intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
+                startActivity(intent)
+                result.success(true)
+            }
+        }
     }
 
     // These must be outside configureFlutterEngine
